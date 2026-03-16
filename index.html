@@ -220,90 +220,71 @@
                         borderColor: '#E07A5F', backgroundColor: '#FFF',
                         borderWidth: 3, fill: false, 
                         pointBackgroundColor: '#FFF',
-                        // 🌟 隱藏中點圓圈，只保留前後端點 (透過 mod 4 運算尋找中點)
-                        pointRadius: (ctx) => (ctx.dataIndex % 4 === 1) ? 0 : 5, 
-                        pointBorderWidth: (ctx) => (ctx.dataIndex % 4 === 1) ? 0 : 2,
-                        spanGaps: false, // 支援 null 斷開連線
-                        clip: false // 防止左右撞牆切圖
+                        pointRadius: function(context) { return (context.dataIndex % 4 === 1) ? 0 : 5; }, 
+                        pointBorderWidth: function(context) { return (context.dataIndex % 4 === 1) ? 0 : 2; },
+                        spanGaps: false, clip: false
                     },
                     { 
                         type: 'line', label: '累積水量 / Total Water (g)', data: [{x: 0, y: 0}], yAxisID: 'yWater', 
                         borderColor: '#5C3A21', backgroundColor: 'rgba(92, 58, 33, 0.15)', 
-                        borderWidth: 2, fill: true, tension: 0.3, pointRadius: 4,
-                        pointBackgroundColor: '#FFF', pointBorderColor: '#5C3A21',
-                        clip: false // 防止左右撞牆切圖
+                        borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#FFF', 
+                        pointBorderColor: '#5C3A21', pointRadius: 4, clip: false 
                     }
                 ]
             },
+            plugins: [customCanvasBackgroundColor],
             options: {
-                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false,
-                // 🌟 加大頂部留白到 60px，確保 100°C 的標籤不會撞到圖表頂部
+                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, 
                 layout: { padding: { top: 60, left: 15, right: 15 } }, 
                 scales: {
                     x: { type: 'linear', title: { display: true, text: '時間 / Time (秒 Seconds)', color: '#A1887F', font: {size: 11} }, grid: { color: '#EFEBE9' }, min: 0, offset: false, ticks: { stepSize: 10, color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
                     yWater: { type: 'linear', position: 'left', title: { display: true, text: '累積水量 / Total Water (g)', color: '#A1887F', font: {size: 11} }, min: 0, beginAtZero: true, grid: { color: '#EFEBE9' }, ticks: { color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
                     yTemp: { type: 'linear', position: 'right', title: { display: true, text: '水溫 / Temp (°C)', color: '#E07A5F', font: {size: 11} }, min: 70, max: 100, grid: { drawOnChartArea: false }, ticks: { stepSize: 5, color: '#E07A5F', font: { family: "'Times New Roman', serif" } } }
                 },
-                plugins: {
+                plugins: { 
+                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 10 } },
                     datalabels: {
-                        // 🌟 只在每段的「隱形中點」顯示溫度，達到置中效果
-                        display: (c) => c.datasetIndex === 0 && c.dataIndex % 4 === 1 && c.dataset.data[c.dataIndex] && c.dataset.data[c.dataIndex].y !== null, 
+                        display: function(context) { return context.datasetIndex === 0 && context.dataIndex % 4 === 1 && context.dataset.data[context.dataIndex] && context.dataset.data[context.dataIndex].y !== null; },
                         align: 'top', offset: 6, color: '#E07A5F', font: { weight: 'bold', size: 12, family: "'Times New Roman', serif" },
-                        formatter: (v) => v && v.y ? v.y + '°' : ''
-                    },
-                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 10 } }
+                        formatter: function(value) { return value && value.y ? value.y + '°' : ''; }
+                    }
                 }
-            },
-            plugins: [{
-                // 白底背景插件，防止圖表下載後變透明
-                id: 'customCanvasBackgroundColor',
-                beforeDraw: (chart) => {
-                    const {ctx} = chart; ctx.save();
-                    ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = '#FCFAF8'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore();
-                }
-            }]
+            }
         });
     }
 
     function parseTimeToSeconds(timeStr) {
         if (!timeStr) return null;
-        if (timeStr.includes(':')) {
-            let parts = timeStr.split(':');
-            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        }
+        if (timeStr.includes(':')) { let parts = timeStr.split(':'); return parseInt(parts[0]) * 60 + parseInt(parts[1]); }
         return parseInt(timeStr);
     }
 
     function updateCharts() {
         if(!mixedChart) return;
-        const stages = Array.from(document.querySelectorAll('.stage-block')).map(b => ({
-            time: b.querySelector('.inp-time').value,
-            weight: b.querySelector('.inp-weight').value,
-            temp: b.querySelector('.inp-temp').value
-        }));
-        let waterData = [{x: 0, y: 0}], tempData = [];
-        let prevW = 0, prevSec = 0, cumSec = 0;
+        let stagesData = collectStagesData();
+        let waterData = [{x: 0, y: 0}];
+        let tempData = []; 
+        let prevWater = 0; let prevSeconds = 0; let cumulativeSeconds = 0; 
 
-        stages.forEach((s) => {
-            let sec = (s.time.includes(':')) ? (parseInt(s.time.split(':')[0])*60 + parseInt(s.time.split(':')[1])) : parseInt(s.time);
-            if(isNaN(sec)) { cumSec += 30; sec = cumSec; } else { cumSec = sec; }
-            let w = parseFloat(s.weight) || prevW;
-            let t = parseFloat(s.temp);
+        stagesData.forEach((stage) => {
+            let seconds = parseTimeToSeconds(stage.time.trim());
+            if (seconds === null || isNaN(seconds)) { cumulativeSeconds += 30; seconds = cumulativeSeconds; } else { cumulativeSeconds = seconds; }
+            let weightVal = parseFloat(stage.weight) || prevWater;
+            let tempVal = parseFloat(stage.temp) || null;
 
-            waterData.push({ x: sec, y: w });
-            if(t) {
-                // 每段推入 4 個點：起點、隱形中點(放數字專用)、終點、null斷線點
-                tempData.push({ x: prevSec, y: t });             
-                tempData.push({ x: (prevSec + sec) / 2, y: t }); 
-                tempData.push({ x: sec, y: t });                 
-                tempData.push({ x: sec, y: null });              
+            if (weightVal > 0) {
+                waterData.push({ x: seconds, y: weightVal });
+                if (tempVal !== null) { 
+                    tempData.push({ x: prevSeconds, y: tempVal });             
+                    tempData.push({ x: (prevSeconds + seconds) / 2, y: tempVal }); 
+                    tempData.push({ x: seconds, y: tempVal });                 
+                    tempData.push({ x: seconds, y: null });                    
+                }
+                prevWater = weightVal;
             }
-            prevW = w; prevSec = sec;
+            prevSeconds = seconds; 
         });
-        mixedChart.data.datasets[1].data = waterData;
-        mixedChart.data.datasets[0].data = tempData;
-        mixedChart.update();
+        mixedChart.data.datasets[0].data = tempData; mixedChart.data.datasets[1].data = waterData; mixedChart.update();
     }
 
     function addStage(defaultWeight = '', defaultTemp = '', defaultType = '沖煮 (Brew)', defaultTime = '') {
@@ -311,9 +292,7 @@
         const container = document.getElementById('stages-container');
         const stageId = `stage-${Date.now()}`; 
         
-        if(!defaultTime) {
-            defaultTime = stageCounter === 1 ? '0:30' : (stageCounter === 2 ? '1:15' : (stageCounter === 3 ? '2:00' : ''));
-        }
+        if(!defaultTime) { defaultTime = stageCounter === 1 ? '0:30' : (stageCounter === 2 ? '1:15' : (stageCounter === 3 ? '2:00' : '')); }
 
         const html = `
             <div class="stage-block" id="${stageId}">
@@ -333,39 +312,33 @@
                     <div class="choice-btn ${defaultType.includes('沖煮') ? 'active' : ''}" onclick="selectChoice(this, '沖煮 (Brew)')">沖煮 (Brew)</div>
                     <div class="choice-btn ${defaultType.includes('浸泡') ? 'active' : ''}" onclick="selectChoice(this, '浸泡 (Steep)')">浸泡 (Steep)</div>
                 </div>
-
                 <div class="choice-group-label">注水力道 / Pouring Force</div>
                 <div class="choice-group" data-key="force" data-val="中等 (Medium)">
                     <div class="choice-btn" onclick="selectChoice(this, '柔和 (Gentle)')">柔和 (Gentle)</div>
                     <div class="choice-btn active" onclick="selectChoice(this, '中等 (Medium)')">中等 (Medium)</div>
                     <div class="choice-btn" onclick="selectChoice(this, '強勁 (Strong)')">強勁 (Strong)</div>
                 </div>
-
                 <div class="choice-group-label">水量控制 / Flow Rate</div>
                 <div class="choice-group" data-key="flow" data-val="中水 (Medium)">
                     <div class="choice-btn" onclick="selectChoice(this, '小水 (Small)')">小水 (Small)</div>
                     <div class="choice-btn active" onclick="selectChoice(this, '中水 (Medium)')">中水 (Medium)</div>
                     <div class="choice-btn" onclick="selectChoice(this, '大水 (Large)')">大水 (Large)</div>
                 </div>
-
                 <div class="choice-group-label">注水方式 / Pouring Method</div>
                 <div class="choice-group" data-key="method" data-val="繞圈 (Circles)">
                     <div class="choice-btn active" onclick="selectChoice(this, '繞圈 (Circles)')">繞圈 (Circles)</div>
                     <div class="choice-btn" onclick="selectChoice(this, '中心點 (Center)')">中心點 (Center)</div>
                     <div class="choice-btn" onclick="selectChoice(this, '其他 (Others)')">其他 (Others)</div>
                 </div>
-            </div>
-        `;
+            </div>`;
         container.insertAdjacentHTML('beforeend', html);
         updateCharts(); 
     }
 
     function removeStage(id) {
-        document.getElementById(id).remove();
-        stageCounter = 0;
+        document.getElementById(id).remove(); stageCounter = 0;
         document.querySelectorAll('.stage-block').forEach(block => {
-            stageCounter++;
-            block.querySelector('.stage-title').innerText = `💧 Stage ${stageCounter}`;
+            stageCounter++; block.querySelector('.stage-title').innerText = `💧 Stage ${stageCounter}`;
         });
         updateCharts(); 
     }
@@ -381,10 +354,7 @@
         let stagesData = [];
         document.querySelectorAll('.stage-block').forEach((block, index) => {
             stagesData.push({
-                stage: index + 1,
-                time: block.querySelector('.inp-time').value,
-                weight: block.querySelector('.inp-weight').value,
-                temp: block.querySelector('.inp-temp').value,
+                stage: index + 1, time: block.querySelector('.inp-time').value, weight: block.querySelector('.inp-weight').value, temp: block.querySelector('.inp-temp').value,
                 type: block.querySelector('.choice-group[data-key="type"]')?.getAttribute('data-val') || '沖煮 (Brew)',
                 force: block.querySelector('.choice-group[data-key="force"]')?.getAttribute('data-val') || '中等 (Medium)',
                 flow: block.querySelector('.choice-group[data-key="flow"]')?.getAttribute('data-val') || '中水 (Medium)',
@@ -401,25 +371,13 @@
             type: 'radar',
             data: { labels: initialLabels, datasets: [{ data: [5,5,5,5,5,5,5,5], backgroundColor: 'rgba(92, 58, 33, 0.25)', borderColor: '#5C3A21', pointBackgroundColor: '#FFF', pointBorderColor: '#5C3A21', borderWidth: 2 }] },
             plugins: [customCanvasBackgroundColor], 
-            options: { 
-                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, 
-                scales: { r: { min: 1, max: 10, ticks: { stepSize: 2, display: false }, grid: { color: '#D7C4B7' }, angleLines: { color: '#D7C4B7' }, pointLabels: { font: { size: 14, weight: '700' } } } }, 
-                plugins: { legend: { display: false } } 
-            }
+            options: { devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, scales: { r: { min: 1, max: 10, ticks: { stepSize: 2, display: false }, grid: { color: '#D7C4B7' }, angleLines: { color: '#D7C4B7' }, pointLabels: { font: { size: 14, weight: '700' } } } }, plugins: { legend: { display: false } } }
         });
 
         const area = document.getElementById('sliders-area');
         const sliderLabels = ['乾香 (Fragrance)','溼香 (Aroma)','風味 (Flavor)','尾韻 (Aftertaste)','酸質 (Acidity)','口感 (Body)','甜感 (Sweetness)','整體 (Overall)'];
-        
         sliderLabels.forEach((label, i) => {
-            const row = document.createElement('div');
-            row.className = 'slider-row';
-            row.innerHTML = `
-                <span class="slider-label">${label}</span>
-                <input type="range" class="slider-input" min="1" max="10" step="0.5" value="5" oninput="updateRadarChart(${i}, this.value)">
-                <span class="slider-val" id="val-${i}">5.0</span>
-            `;
-            area.appendChild(row);
+            area.insertAdjacentHTML('beforeend', `<div class="slider-row"><span class="slider-label">${label}</span><input type="range" class="slider-input" min="1" max="10" step="0.5" value="5" oninput="updateRadarChart(${i}, this.value)"><span class="slider-val" id="val-${i}">5.0</span></div>`);
         });
     }
 
@@ -436,11 +394,7 @@
     function populateSelectOptions(selectId, items, placeholderText) {
         const select = document.getElementById(selectId);
         select.innerHTML = `<option value="">${placeholderText}</option>`;
-        if (items && items.length > 0) {
-            items.forEach(item => {
-                if (item.id && item.name) { select.innerHTML += `<option value="${item.id}">${item.name}</option>`; }
-            });
-        }
+        if (items && items.length > 0) { items.forEach(item => { if (item.id && item.name) { select.innerHTML += `<option value="${item.id}">${item.name}</option>`; } }); }
         select.innerHTML += `<option value="other">✎ 其他 (手動輸入)</option>`;
     }
 
@@ -557,9 +511,9 @@
             dose: document.getElementById('dose').value, water: document.getElementById('water').value,
             grind: document.getElementById('grind').value, pouring_stages_text: pouringStagesText, 
             notes: document.getElementById('notes').value, 
-            // 🌟 終極防呆機制：如果沒選，就強迫塞入 ["無標記"]，避免 Notion 陣列判斷錯誤崩潰！
-            expected_flavors: selectedExpected.size > 0 ? Array.from(selectedExpected) : ["無標記"],
-            surprise_flavors: selectedSurprise.size > 0 ? Array.from(selectedSurprise) : ["無標記"],
+            // 🌟 核心修改：將陣列轉為以逗號分隔的字串傳出
+            expected_flavors: selectedExpected.size > 0 ? Array.from(selectedExpected).join(',') : "無標記",
+            surprise_flavors: selectedSurprise.size > 0 ? Array.from(selectedSurprise).join(',') : "無標記",
             fragrance: scores[0], aroma: scores[1], flavor: scores[2], aftertaste: scores[3],
             acidity: scores[4], mouthfeel: scores[5], sweetness: scores[6], overall: scores[7],
             radar_image: radarChart.toBase64Image().split(',')[1],
