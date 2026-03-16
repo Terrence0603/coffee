@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coffee Daily - Master Edition</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --bg-color: #EFEBE4; --card-bg: #FCFAF8; --text-main: #2D1A11; --text-muted: #6F4E37; --accent-wood: #5C3A21; --highlight: #4A2E1B; --border-color: #D7C4B7; }
+        body { font-family: 'Times New Roman', 'Noto Serif TC', serif; background: var(--bg-color); color: var(--text-main); padding: 15px; margin: 0; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 60px; }
+        h2 { text-align: center; color: var(--text-main); font-weight: 700; letter-spacing: 1.5px; margin-top: 5px; font-size: 1.8rem;}
+        .section-label { font-size: 1.1rem; font-weight: 700; color: var(--accent-wood); margin-bottom: 12px; display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; letter-spacing: 0.5px;}
+        .card { background: var(--card-bg); border-radius: 8px; padding: 22px; margin-bottom: 18px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(45, 26, 17, 0.05); }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 4px; background: #FFF; box-sizing: border-box; margin-bottom: 10px; font-size: 1rem; color: var(--text-main); font-family: 'Times New Roman', 'Noto Serif TC', serif; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-wood); box-shadow: 0 0 0 2px rgba(92, 58, 33, 0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .chart-lock { position: relative; width: 100%; height: 280px; margin: 15px auto; background: #FCFAF8; }
+        .radar-lock { position: relative; width: 100%; max-width: 350px; height: 300px; margin: 0 auto 20px auto; background: #FCFAF8; }
+        .slider-row { display: flex; align-items: center; margin-bottom: 12px; }
+        .slider-label { width: 140px; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); }
+        .slider-input { flex-grow: 1; margin: 0 12px; accent-color: var(--highlight); }
+        .slider-val { width: 35px; text-align: right; font-weight: 700; color: var(--highlight); font-size: 1.1rem; font-family: 'Times New Roman', serif; }
+        .tags-wrapper { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .flavor-tag { padding: 6px 14px; border-radius: 4px; font-size: 0.95rem; cursor: pointer; border: 1px solid var(--border-color); background: #FFF; color: var(--text-muted); transition: all 0.2s ease; letter-spacing: 0.5px;}
+        .flavor-tag.selected { background: var(--highlight); color: #FFF; border-color: var(--highlight); box-shadow: 0 2px 6px rgba(45, 26, 17, 0.3); font-weight: 700;}
+        .accordion { margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; }
+        .acc-header { background: #F4ECE4; padding: 14px 16px; font-size: 1.05rem; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .acc-body { padding: 14px 16px; background: #FFF; display: none; border-top: 1px solid var(--border-color); }
+        .acc-body.active { display: block; }
+        
+        .stage-container { display: flex; flex-direction: column; gap: 15px; }
+        .stage-block { border-left: 3px solid var(--accent-wood); padding-left: 15px; position: relative; background: #FFF; padding: 15px 15px 15px 20px; border-radius: 0 8px 8px 0; border: 1px solid var(--border-color); border-left-width: 4px; }
+        .stage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .stage-title { font-weight: 700; color: var(--accent-wood); font-size: 1.05rem; }
+        .stage-remove { color: #A1887F; font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+        .choice-group-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; margin-top: 8px; font-weight: 700; }
+        .choice-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .choice-btn { padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.85rem; color: var(--text-muted); background: #FAF8F5; cursor: pointer; transition: 0.2s; }
+        .choice-btn.active { background: var(--accent-wood); color: #FFF; border-color: var(--accent-wood); font-weight: 700; }
+        
+        .btn-outline { width: 100%; padding: 12px; background: transparent; color: var(--accent-wood); border: 1px dashed var(--accent-wood); border-radius: 4px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: 'Times New Roman', 'Noto Serif TC', serif; margin-top: 10px;}
+        .btn-outline:active { background: #F4ECE4; }
+        .btn-main { width: 100%; padding: 16px; background: var(--highlight); color: white; border: none; border-radius: 4px; font-size: 1.2rem; font-weight: 700; letter-spacing: 2px; margin-top: 10px; cursor: pointer; font-family: 'Times New Roman', 'Noto Serif TC', serif; transition: background 0.2s;}
+        .btn-main:active { background: #2D1A11; }
+        .hidden-input { display: none; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>☕ Coffee Daily</h2>
+
+    <div class="card">
+        <span class="section-label">豆單資訊 / Bean Information</span>
+        <input type="text" id="beanName" list="beanList" placeholder="連線載入庫存... / Load from Database" autocomplete="off" onchange="handleBeanSelect()">
+        <datalist id="beanList"></datalist>
+        <input type="hidden" id="beanId" value="">
+        
+        <div class="grid-2">
+            <select id="method">
+                <option value="手沖">手沖 (Pour Over)</option>
+                <option value="義式">義式 (Espresso)</option>
+                <option value="愛樂壓">愛樂壓 (AeroPress)</option>
+            </select>
+            <div>
+                <select id="tool" onchange="checkCustomInput('tool')">
+                    <option value="">載入濾杯資料中... / Loading...</option>
+                </select>
+                <input type="text" id="tool-custom" class="hidden-input" placeholder="手動輸入 (不會連結關聯資料庫)">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <span class="section-label">沖煮參數 / Brewing Parameters</span>
+        <div class="grid-2" style="margin-bottom: 10px;">
+            <input type="number" id="dose" placeholder="總粉重 / Dose (g)" value="20">
+            <input type="number" id="water" placeholder="總水量 / Water (ml)" value="300">
+        </div>
+        <div class="grid-2">
+            <div>
+                <select id="grinder" onchange="checkCustomInput('grinder')">
+                    <option value="">載入磨豆機中... / Loading...</option>
+                </select>
+                <input type="text" id="grinder-custom" class="hidden-input" placeholder="手動輸入 (不會連結關聯資料庫)">
+            </div>
+            <input type="text" id="grind" placeholder="研磨度 / Grind Size">
+        </div>
+    </div>
+
+    <div class="card">
+        <span class="section-label">注水計畫 / Pouring Structure</span>
+        <div id="stages-container" class="stage-container"></div>
+        <button class="btn-outline" onclick="addStage()">+ 新增注水階段 / Add Stage</button>
+
+        <div style="border-top: 1px dashed var(--border-color); margin-top: 20px; padding-top: 10px;">
+            <div class="chart-lock">
+                <canvas id="mixedChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <span class="section-label">風味感官 / Sensory & Flavors</span>
+        
+        <div class="radar-lock">
+            <canvas id="radarChart"></canvas>
+        </div>
+        
+        <div id="sliders-area" style="margin-bottom: 25px;"></div>
+
+        <span class="section-label" style="border:none; margin-bottom:12px;">🎯 預期風味 / Expected Flavors</span>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -8px;">(勾選此豆單庫存中已標註的風味)</p>
+        <div id="expected-flavors-area" class="tags-wrapper">
+            <span style="color:#A1887F; font-size:0.95rem;">請先選擇咖啡豆...</span>
+        </div>
+
+        <span class="section-label" style="border:none; margin-top:25px; margin-bottom:12px;">✨ 驚喜風味 / Surprise Flavors</span>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -8px;">(勾選庫存描述之外喝到的風味)</p>
+        <div id="surprise-flavors-area">
+            <span style="color:#A1887F; font-size:0.95rem;">等待資料載入...</span>
+        </div>
+
+        <hr style="border:0; border-top:1px dashed var(--border-color); margin: 25px 0;">
+
+        <span class="section-label" style="border:none; margin-bottom:12px;">📝 詳細筆記 / Tasting Notes</span>
+        <textarea id="notes" placeholder="寫下風味描述、口感或改進想法..." style="height: 100px;"></textarea>
+    </div>
+
+    <button class="btn-main" id="saveBtn" onclick="sendData()">記錄這杯咖啡 / Save Record</button>
+</div>
+
+<script>
+    const WEBHOOK_URL = "https://hook.us2.make.com/bazpacuk65xjs6gkrkx9iqgzjqu41qi7"; 
+
+    const builtInTags = [
+        "Passion fruit (百香果)", "Kiwi Wine notes (奇異果酒)", "Red-floral(紅色花香)", "Cherry(櫻桃)", "Bayberry(楊梅)",
+        "Pink Lemonade (粉紅檸檬水)", "Strawberry Preserve (草莓果醬)", "Soft Florals (柔和花香)", "Dragon Fruit(火龍果)",
+        "Currants(醋栗)", "Delicate(雅致)", "Orange Blossom (橙花)", "Orange (橙子)", "Watermelon (西瓜)",
+        "Botanical (植物性的 / 草本的)", "Plum (梅子)", "Blackberry (黑莓)", "Rose (玫瑰)", "Strawberry (草莓)",
+        "Peach(桃子)", "Floral Aroma(水果調性)", "Candy-like Mouthfeel(糖果口感)", "White Peach (白桃)", "Grape (葡萄)",
+        "Green Tea (綠茶)", "Star Fruit (楊桃)", "Red Fruit (紅色果實)", "Plum Wine (梅酒)", "Cherry Wine (櫻桃酒)",
+        "Peach Tea (桃子茶)", "Hibiscus(芙蓉花/洛神花)", "Apricot (杏桃)", "Lime (萊姆)", "Fruity Tea (水果茶)",
+        "Lemongrass (檸檬草)", "Green Apple (綠蘋果)", "White Flowers (白花)", "Redcurrant (紅醋栗)", "Cherry Tomato (櫻桃番茄)",
+        "Fruit Juice (果汁)", "Blueberry (藍莓味)", "Toffee (太妃糖)", "Red Wine (紅酒)", "Purple Floral (深色水果調性)",
+        "Gardenia (梔子花)", "Pineapple (鳳梨)", "Fruit Gummies (水果軟糖)", "Champagne Grapes (香檳葡萄)",
+        "Sweet Peach (甜桃)", "Berries (莓果)", "Honey (蜂蜜)", "Oriental Beauty Tea (東方美人茶)", "Brown Sugar (紅糖)", "Lychee (荔枝)"
+    ];
+
+    let globalBeanData = []; 
+    let allUniqueFlavors = new Set(builtInTags); 
+    let selectedExpected = new Set(); 
+    let selectedSurprise = new Set();
+    let stageCounter = 0; 
+    let radarChart = null;
+    let mixedChart = null;
+
+    const customCanvasBackgroundColor = {
+        id: 'customCanvasBackgroundColor',
+        beforeDraw: (chart, args, options) => {
+            const {ctx} = chart;
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = options.color || '#FCFAF8';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+        }
+    };
+
+    const categories = [
+        { id: 'alcohol', icon: '🍷', name: '酒感/發酵 (Winey)', keywords: ['WINE', 'RUM', 'CHAMPAGNE', '酒', '威士忌', '蘭姆', '發酵', '香檳'] },
+        { id: 'berry', icon: '🍓', name: '莓果調 (Berry)', keywords: ['BERRY', 'BERRIES', 'CURRANT', '莓', '醋栗'] },
+        { id: 'flower', icon: '🌸', name: '花香調 (Floral)', keywords: ['FLORAL', 'FLOWER', 'BLOSSOM', 'ROSE', 'HIBISCUS', 'GARDENIA', '花', '玫瑰', '芙蓉', '梔子'] },
+        { id: 'tea', icon: '🍵', name: '茶感/草本 (Tea/Herb)', keywords: ['TEA', 'BOTANICAL', 'LEMONGRASS', '茶', '草本', '植物', '雅致'] },
+        { id: 'sugar', icon: '🍬', name: '糖/甜/堅果 (Sweet/Nut)', keywords: ['SUGAR', 'SWEET', 'HONEY', 'CANDY', 'GUMMY', 'GUMMIES', 'TOFFEE', '糖', '蜜', '巧克', '可可', '奶油', '太妃', '堅果', '核桃', '杏仁', '焦糖'] },
+        { id: 'fruit', icon: '🍋', name: '水果/酸質 (Fruity)', keywords: ['FRUIT', 'APPLE', 'GRAPE', 'PEACH', 'LYCHEE', 'MELON', 'LIME', 'LEMON', 'ORANGE', 'CHERRY', 'APRICOT', 'PINEAPPLE', 'TOMATO', '果', '柑', '橘', '柚', '檸', '蘋', '梨', '桃', '荔枝', '鳳梨', '瓜', '李', '杏', '萊姆', '櫻桃', '番茄'] },
+        { id: 'other', icon: '🍂', name: '其他 (Others)', keywords: [] }
+    ];
+
+    window.onload = function() {
+        try {
+            Chart.defaults.font.family = "'Times New Roman', 'Noto Serif TC', serif";
+            Chart.defaults.color = "#6F4E37";
+            Chart.register(ChartDataLabels);
+            Chart.defaults.plugins.datalabels.display = false;
+            initRadarChartAndSliders();
+            initMixedChart(); 
+        } catch (error) { console.error("圖表載入失敗:", error); }
+
+        loadData();
+        addStage(40, 92, '悶蒸 (Bloom)', '0:30');
+        addStage(150, 92, '沖煮 (Brew)', '1:15');
+        addStage(300, 92, '沖煮 (Brew)', '2:00'); 
+    };
+
+    function checkCustomInput(id) {
+        const selectElement = document.getElementById(id);
+        const customInput = document.getElementById(`${id}-custom`);
+        if (selectElement.value === "other") { customInput.style.display = "block"; } 
+        else { customInput.style.display = "none"; customInput.value = ""; }
+    }
+
+    function initMixedChart() {
+        const ctx = document.getElementById('mixedChart').getContext('2d');
+        mixedChart = new Chart(ctx, {
+            type: 'line', 
+            data: {
+                datasets: [
+                    { 
+                        type: 'line', label: '水溫 / Temp (°C)', data: [], yAxisID: 'yTemp', 
+                        borderColor: '#E07A5F', backgroundColor: '#FFF',
+                        borderWidth: 3, fill: false, 
+                        pointBackgroundColor: '#FFF',
+                        // 🌟 隱藏中點圓圈，只保留前後端點 (透過 mod 4 運算尋找中點)
+                        pointRadius: (ctx) => (ctx.dataIndex % 4 === 1) ? 0 : 5, 
+                        pointBorderWidth: (ctx) => (ctx.dataIndex % 4 === 1) ? 0 : 2,
+                        spanGaps: false, // 支援 null 斷開連線
+                        clip: false // 防止左右撞牆切圖
+                    },
+                    { 
+                        type: 'line', label: '累積水量 / Total Water (g)', data: [{x: 0, y: 0}], yAxisID: 'yWater', 
+                        borderColor: '#5C3A21', backgroundColor: 'rgba(92, 58, 33, 0.15)', 
+                        borderWidth: 2, fill: true, tension: 0.3, pointRadius: 4,
+                        pointBackgroundColor: '#FFF', pointBorderColor: '#5C3A21',
+                        clip: false // 防止左右撞牆切圖
+                    }
+                ]
+            },
+            options: {
+                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false,
+                // 🌟 加大頂部留白到 60px，確保 100°C 的標籤不會撞到圖表頂部
+                layout: { padding: { top: 60, left: 15, right: 15 } }, 
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: '時間 / Time (秒 Seconds)', color: '#A1887F', font: {size: 11} }, grid: { color: '#EFEBE9' }, min: 0, offset: false, ticks: { stepSize: 10, color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
+                    yWater: { type: 'linear', position: 'left', title: { display: true, text: '累積水量 / Total Water (g)', color: '#A1887F', font: {size: 11} }, min: 0, beginAtZero: true, grid: { color: '#EFEBE9' }, ticks: { color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
+                    yTemp: { type: 'linear', position: 'right', title: { display: true, text: '水溫 / Temp (°C)', color: '#E07A5F', font: {size: 11} }, min: 70, max: 100, grid: { drawOnChartArea: false }, ticks: { stepSize: 5, color: '#E07A5F', font: { family: "'Times New Roman', serif" } } }
+                },
+                plugins: {
+                    datalabels: {
+                        // 🌟 只在每段的「隱形中點」顯示溫度，達到置中效果
+                        display: (c) => c.datasetIndex === 0 && c.dataIndex % 4 === 1 && c.dataset.data[c.dataIndex] && c.dataset.data[c.dataIndex].y !== null, 
+                        align: 'top', offset: 6, color: '#E07A5F', font: { weight: 'bold', size: 12, family: "'Times New Roman', serif" },
+                        formatter: (v) => v && v.y ? v.y + '°' : ''
+                    },
+                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 10 } }
+                }
+            },
+            plugins: [{
+                // 白底背景插件，防止圖表下載後變透明
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart) => {
+                    const {ctx} = chart; ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = '#FCFAF8'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore();
+                }
+            }]
+        });
+    }
+
+    function parseTimeToSeconds(timeStr) {
+        if (!timeStr) return null;
+        if (timeStr.includes(':')) {
+            let parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+        return parseInt(timeStr);
+    }
+
+    function updateCharts() {
+        if(!mixedChart) return;
+        const stages = Array.from(document.querySelectorAll('.stage-block')).map(b => ({
+            time: b.querySelector('.inp-time').value,
+            weight: b.querySelector('.inp-weight').value,
+            temp: b.querySelector('.inp-temp').value
+        }));
+        let waterData = [{x: 0, y: 0}], tempData = [];
+        let prevW = 0, prevSec = 0, cumSec = 0;
+
+        stages.forEach((s) => {
+            let sec = (s.time.includes(':')) ? (parseInt(s.time.split(':')[0])*60 + parseInt(s.time.split(':')[1])) : parseInt(s.time);
+            if(isNaN(sec)) { cumSec += 30; sec = cumSec; } else { cumSec = sec; }
+            let w = parseFloat(s.weight) || prevW;
+            let t = parseFloat(s.temp);
+
+            waterData.push({ x: sec, y: w });
+            if(t) {
+                // 每段推入 4 個點：起點、隱形中點(放數字專用)、終點、null斷線點
+                tempData.push({ x: prevSec, y: t });             
+                tempData.push({ x: (prevSec + sec) / 2, y: t }); 
+                tempData.push({ x: sec, y: t });                 
+                tempData.push({ x: sec, y: null });              
+            }
+            prevW = w; prevSec = sec;
+        });
+        mixedChart.data.datasets[1].data = waterData;
+        mixedChart.data.datasets[0].data = tempData;
+        mixedChart.update();
+    }
+
+    function addStage(defaultWeight = '', defaultTemp = '', defaultType = '沖煮 (Brew)', defaultTime = '') {
+        stageCounter++;
+        const container = document.getElementById('stages-container');
+        const stageId = `stage-${Date.now()}`; 
+        
+        if(!defaultTime) {
+            defaultTime = stageCounter === 1 ? '0:30' : (stageCounter === 2 ? '1:15' : (stageCounter === 3 ? '2:00' : ''));
+        }
+
+        const html = `
+            <div class="stage-block" id="${stageId}">
+                <div class="stage-header">
+                    <div class="stage-title">💧 Stage ${stageCounter}</div>
+                    <div class="stage-remove" onclick="removeStage('${stageId}')">刪除 / Delete</div>
+                </div>
+                <div class="grid-3" style="margin-bottom: 5px;">
+                    <input type="text" class="inp-time" placeholder="時間(0:30)" value="${defaultTime}" oninput="updateCharts()">
+                    <input type="number" class="inp-weight" placeholder="注水至(g)" value="${defaultWeight}" oninput="updateCharts()">
+                    <input type="number" class="inp-temp" placeholder="水溫(°C)" value="${defaultTemp}" oninput="updateCharts()" max="100">
+                </div>
+
+                <div class="choice-group-label">階段類型 / Stage Type</div>
+                <div class="choice-group" data-key="type" data-val="${defaultType}">
+                    <div class="choice-btn ${defaultType.includes('悶蒸') ? 'active' : ''}" onclick="selectChoice(this, '悶蒸 (Bloom)')">悶蒸 (Bloom)</div>
+                    <div class="choice-btn ${defaultType.includes('沖煮') ? 'active' : ''}" onclick="selectChoice(this, '沖煮 (Brew)')">沖煮 (Brew)</div>
+                    <div class="choice-btn ${defaultType.includes('浸泡') ? 'active' : ''}" onclick="selectChoice(this, '浸泡 (Steep)')">浸泡 (Steep)</div>
+                </div>
+
+                <div class="choice-group-label">注水力道 / Pouring Force</div>
+                <div class="choice-group" data-key="force" data-val="中等 (Medium)">
+                    <div class="choice-btn" onclick="selectChoice(this, '柔和 (Gentle)')">柔和 (Gentle)</div>
+                    <div class="choice-btn active" onclick="selectChoice(this, '中等 (Medium)')">中等 (Medium)</div>
+                    <div class="choice-btn" onclick="selectChoice(this, '強勁 (Strong)')">強勁 (Strong)</div>
+                </div>
+
+                <div class="choice-group-label">水量控制 / Flow Rate</div>
+                <div class="choice-group" data-key="flow" data-val="中水 (Medium)">
+                    <div class="choice-btn" onclick="selectChoice(this, '小水 (Small)')">小水 (Small)</div>
+                    <div class="choice-btn active" onclick="selectChoice(this, '中水 (Medium)')">中水 (Medium)</div>
+                    <div class="choice-btn" onclick="selectChoice(this, '大水 (Large)')">大水 (Large)</div>
+                </div>
+
+                <div class="choice-group-label">注水方式 / Pouring Method</div>
+                <div class="choice-group" data-key="method" data-val="繞圈 (Circles)">
+                    <div class="choice-btn active" onclick="selectChoice(this, '繞圈 (Circles)')">繞圈 (Circles)</div>
+                    <div class="choice-btn" onclick="selectChoice(this, '中心點 (Center)')">中心點 (Center)</div>
+                    <div class="choice-btn" onclick="selectChoice(this, '其他 (Others)')">其他 (Others)</div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        updateCharts(); 
+    }
+
+    function removeStage(id) {
+        document.getElementById(id).remove();
+        stageCounter = 0;
+        document.querySelectorAll('.stage-block').forEach(block => {
+            stageCounter++;
+            block.querySelector('.stage-title').innerText = `💧 Stage ${stageCounter}`;
+        });
+        updateCharts(); 
+    }
+
+    function selectChoice(btnElement, value) {
+        const group = btnElement.parentElement;
+        group.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        group.setAttribute('data-val', value);
+    }
+
+    function collectStagesData() {
+        let stagesData = [];
+        document.querySelectorAll('.stage-block').forEach((block, index) => {
+            stagesData.push({
+                stage: index + 1,
+                time: block.querySelector('.inp-time').value,
+                weight: block.querySelector('.inp-weight').value,
+                temp: block.querySelector('.inp-temp').value,
+                type: block.querySelector('.choice-group[data-key="type"]')?.getAttribute('data-val') || '沖煮 (Brew)',
+                force: block.querySelector('.choice-group[data-key="force"]')?.getAttribute('data-val') || '中等 (Medium)',
+                flow: block.querySelector('.choice-group[data-key="flow"]')?.getAttribute('data-val') || '中水 (Medium)',
+                method: block.querySelector('.choice-group[data-key="method"]')?.getAttribute('data-val') || '繞圈 (Circles)'
+            });
+        });
+        return stagesData;
+    }
+
+    function initRadarChartAndSliders() {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        let initialLabels = ['乾香','溼香','風味','尾韻','酸質','口感','甜感','整體'].map(l => l + ' 5.0');
+        radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: { labels: initialLabels, datasets: [{ data: [5,5,5,5,5,5,5,5], backgroundColor: 'rgba(92, 58, 33, 0.25)', borderColor: '#5C3A21', pointBackgroundColor: '#FFF', pointBorderColor: '#5C3A21', borderWidth: 2 }] },
+            plugins: [customCanvasBackgroundColor], 
+            options: { 
+                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, 
+                scales: { r: { min: 1, max: 10, ticks: { stepSize: 2, display: false }, grid: { color: '#D7C4B7' }, angleLines: { color: '#D7C4B7' }, pointLabels: { font: { size: 14, weight: '700' } } } }, 
+                plugins: { legend: { display: false } } 
+            }
+        });
+
+        const area = document.getElementById('sliders-area');
+        const sliderLabels = ['乾香 (Fragrance)','溼香 (Aroma)','風味 (Flavor)','尾韻 (Aftertaste)','酸質 (Acidity)','口感 (Body)','甜感 (Sweetness)','整體 (Overall)'];
+        
+        sliderLabels.forEach((label, i) => {
+            const row = document.createElement('div');
+            row.className = 'slider-row';
+            row.innerHTML = `
+                <span class="slider-label">${label}</span>
+                <input type="range" class="slider-input" min="1" max="10" step="0.5" value="5" oninput="updateRadarChart(${i}, this.value)">
+                <span class="slider-val" id="val-${i}">5.0</span>
+            `;
+            area.appendChild(row);
+        });
+    }
+
+    function updateRadarChart(index, val) {
+        if(!radarChart) return;
+        let numVal = parseFloat(val).toFixed(1);
+        document.getElementById(`val-${index}`).innerText = numVal;
+        radarChart.data.datasets[0].data[index] = val;
+        let baseLabels = ['乾香','溼香','風味','尾韻','酸質','口感','甜感','整體'];
+        radarChart.data.labels[index] = baseLabels[index] + ' ' + numVal;
+        radarChart.update();
+    }
+
+    function populateSelectOptions(selectId, items, placeholderText) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = `<option value="">${placeholderText}</option>`;
+        if (items && items.length > 0) {
+            items.forEach(item => {
+                if (item.id && item.name) { select.innerHTML += `<option value="${item.id}">${item.name}</option>`; }
+            });
+        }
+        select.innerHTML += `<option value="other">✎ 其他 (手動輸入)</option>`;
+    }
+
+    async function loadData() {
+        try {
+            const res = await fetch(WEBHOOK_URL, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ action: "load" }) });
+            let data = await res.json(); 
+            if (data.beans) {
+                globalBeanData = data.beans;
+                populateSelectOptions('tool', data.equipment || [], "請選擇濾杯");
+                populateSelectOptions('grinder', data.accessories || [], "請選擇磨豆機");
+            }
+            const list = document.getElementById('beanList');
+            list.innerHTML = "";
+            globalBeanData.forEach(item => {
+                if(item.name) {
+                    const opt = document.createElement('option');
+                    opt.value = item.name; opt.dataset.id = item.id; list.appendChild(opt);
+                }
+                if(item.flavors) { extractFlavors(item.flavors).forEach(f => allUniqueFlavors.add(f)); }
+            });
+            renderSurpriseFlavors(Array.from(allUniqueFlavors));
+        } catch(e) { 
+            console.error("載入失敗", e); 
+            renderSurpriseFlavors(Array.from(allUniqueFlavors));
+        }
+    }
+
+    function extractFlavors(rawFlavors) {
+        if (!rawFlavors) return [];
+        let parsed = [];
+        let arr = Array.isArray(rawFlavors) ? rawFlavors.flat() : [rawFlavors];
+        arr.forEach(f => {
+            if (typeof f === 'object' && f !== null && f.name) { f.name.toString().split(',').forEach(s => { if(s.trim()) parsed.push(s.trim()); }); } 
+            else if (typeof f === 'string') { f.split(',').forEach(s => { if(s.trim()) parsed.push(s.trim()); }); }
+        });
+        return parsed.filter(Boolean); 
+    }
+
+    function handleBeanSelect() {
+        const inputName = document.getElementById('beanName').value.trim();
+        const matchedBean = globalBeanData.find(b => b.name && b.name.trim() === inputName);
+        document.getElementById('beanId').value = matchedBean ? matchedBean.id : "";
+
+        selectedExpected.clear(); 
+        let defaultFlavors = matchedBean && matchedBean.flavors ? extractFlavors(matchedBean.flavors) : [];
+        const expectedArea = document.getElementById('expected-flavors-area');
+        expectedArea.innerHTML = "";
+        
+        if (defaultFlavors.length === 0) { expectedArea.innerHTML = "<span style='color:#A1887F;'>無紀錄風味</span>"; } 
+        else { defaultFlavors.forEach(f => expectedArea.appendChild(createTagBtn(f, 'expected'))); }
+
+        let surpriseFlavors = Array.from(allUniqueFlavors).filter(f => !defaultFlavors.includes(f));
+        renderSurpriseFlavors(surpriseFlavors);
+    }
+
+    function renderSurpriseFlavors(flavorsArray) {
+        const area = document.getElementById('surprise-flavors-area');
+        area.innerHTML = "";
+        categories.forEach(cat => {
+            let catFlavors = flavorsArray.filter(tag => {
+                if (!tag || typeof tag !== 'string') return false; 
+                let upperTag = tag.toUpperCase();
+                if (cat.id === 'other') return !categories.some(c => c.id !== 'other' && c.keywords.some(k => upperTag.includes(k)));
+                return cat.keywords.some(k => upperTag.includes(k));
+            });
+            if (catFlavors.length > 0) {
+                const acc = document.createElement('div'); acc.className = 'accordion';
+                const head = document.createElement('div'); head.className = 'acc-header';
+                head.innerHTML = `<span>${cat.icon} ${cat.name} <span style="font-size:0.9rem; color:#A1887F; font-family:'Times New Roman', serif;">(${catFlavors.length})</span></span> <span style="font-size:0.75rem;">▼</span>`;
+                const body = document.createElement('div'); body.className = 'acc-body tags-wrapper';
+                catFlavors.forEach(f => body.appendChild(createTagBtn(f, 'surprise')));
+                head.onclick = () => { 
+                    body.classList.toggle('active'); 
+                    head.innerHTML = body.classList.contains('active') ? 
+                        `<span>${cat.icon} ${cat.name} <span style="font-size:0.9rem; color:#A1887F; font-family:'Times New Roman', serif;">(${catFlavors.length})</span></span> <span style="font-size:0.75rem;">▲</span>` : 
+                        `<span>${cat.icon} ${cat.name} <span style="font-size:0.9rem; color:#A1887F; font-family:'Times New Roman', serif;">(${catFlavors.length})</span></span> <span style="font-size:0.75rem;">▼</span>`;
+                };
+                acc.appendChild(head); acc.appendChild(body); area.appendChild(acc);
+            }
+        });
+    }
+
+    function createTagBtn(flavorText, type) {
+        const btn = document.createElement('div');
+        btn.className = 'flavor-tag'; btn.innerText = flavorText;
+        btn.onclick = () => {
+            let targetSet = (type === 'expected') ? selectedExpected : selectedSurprise;
+            if(targetSet.has(flavorText)) { targetSet.delete(flavorText); btn.classList.remove('selected'); } 
+            else { targetSet.add(flavorText); btn.classList.add('selected'); }
+        };
+        return btn;
+    }
+
+    async function sendData() {
+        const btn = document.getElementById('saveBtn');
+        const beanNameStr = document.getElementById('beanName').value;
+        if(!beanNameStr) { alert("請輸入豆名"); return; }
+        
+        btn.innerText = "儲存中..."; btn.disabled = true;
+        
+        const scores = radarChart ? radarChart.data.datasets[0].data : [5,5,5,5,5,5,5,5];
+        const pouringStages = collectStagesData();
+        let pouringStagesText = pouringStages.map(s => 
+            `段${s.stage} [${s.time}]: ${s.weight}g, ${s.temp}°C | ${s.type} | ${s.force}, ${s.flow}, ${s.method}`
+        ).join('\n');
+
+        const payload = {
+            action: "save", title: beanNameStr, date: new Date().toISOString().split('T')[0],
+            bean_id: document.getElementById('beanId').value,
+            method: document.getElementById('method').value, 
+            tool_id: document.getElementById('tool').value === 'other' ? document.getElementById('tool-custom').value : document.getElementById('tool').value,
+            grinder_id: document.getElementById('grinder').value === 'other' ? document.getElementById('grinder-custom').value : document.getElementById('grinder').value,
+            dose: document.getElementById('dose').value, water: document.getElementById('water').value,
+            grind: document.getElementById('grind').value, pouring_stages_text: pouringStagesText, 
+            notes: document.getElementById('notes').value, 
+            // 🌟 終極防呆機制：如果沒選，就強迫塞入 ["無標記"]，避免 Notion 陣列判斷錯誤崩潰！
+            expected_flavors: selectedExpected.size > 0 ? Array.from(selectedExpected) : ["無標記"],
+            surprise_flavors: selectedSurprise.size > 0 ? Array.from(selectedSurprise) : ["無標記"],
+            fragrance: scores[0], aroma: scores[1], flavor: scores[2], aftertaste: scores[3],
+            acidity: scores[4], mouthfeel: scores[5], sweetness: scores[6], overall: scores[7],
+            radar_image: radarChart.toBase64Image().split(',')[1],
+            mixed_image: mixedChart.toBase64Image().split(',')[1]
+        };
+
+        try {
+            await fetch(WEBHOOK_URL, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
+            alert("✅ 紀錄儲存成功！"); window.location.reload(); 
+        } catch(e) { alert("❌ 儲存失敗"); btn.disabled = false; btn.innerText = "記錄這杯咖啡"; }
+    }
+</script>
+</body>
+</html>
