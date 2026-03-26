@@ -25,7 +25,7 @@
 * **後端與自動化 (Backend & Automation)**: Make.com (Webhook), Notion API
 
 ## 📸 畫面預覽 (Screenshots)
-![Coffee Daily 畫面預覽](https://github.com/user-attachments/assets/addac42e-df6b-4b43-bbfb-95eb8109d812) 
+![Coffee Daily 畫面預覽](https://github.com/user-attachments/assets/beb24e47-56fb-4263-bee6-cc8f87be79da) 
 
 ## 👨‍💻 關於作者 (About Me)
 
