@@ -25,7 +25,7 @@
 * **後端與自動化 (Backend & Automation)**: Make.com (Webhook), Notion API
 
 ## 📸 畫面預覽 (Screenshots)
- `<img width="1920" height="6309" alt="Image" src="https://github.com/user-attachments/assets/662bcb74-f547-4d9b-ae87-e683409dea98" />`
+ `<img width="1920" height="6309" alt="Image" src="https://github.com/user-attachments/assets/b53e28b5-b3b3-4021-b2ac-7c8e4c17c3b6" />`
 ## 👨‍💻 關於作者 (About Me)
 
 **Terrence (HUNG HSIANG JEN)**
