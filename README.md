@@ -25,8 +25,6 @@
 * **後端與自動化 (Backend & Automation)**: Make.com (Webhook), Notion API
 
 ## 📸 畫面預覽 (Screenshots)
-
-*(💡 建議在這裡放上 2-3 張 App 的實際截圖)*
 * `<img width="1920" height="6309" alt="Image" src="https://github.com/user-attachments/assets/35624c09-cc13-4f91-8c08-dcf74d9ddb90" />`
 ## 👨‍💻 關於作者 (About Me)
 
