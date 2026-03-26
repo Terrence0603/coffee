@@ -27,9 +27,7 @@
 ## 📸 畫面預覽 (Screenshots)
 
 *(💡 建議在這裡放上 2-3 張 App 的實際截圖)*
-* `<img src="放入你的圖表截圖網址" width="400">`
-* `<img src="放入你的雷達圖截圖網址" width="400">`
-
+* `<img width="1920" height="6309" alt="Image" src="https://github.com/user-attachments/assets/35624c09-cc13-4f91-8c08-dcf74d9ddb90" />`
 ## 👨‍💻 關於作者 (About Me)
 
 **Terrence (HUNG HSIANG JEN)**
