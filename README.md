@@ -25,10 +25,11 @@
 * **後端與自動化 (Backend & Automation)**: Make.com (Webhook), Notion API
 
 ## 📸 畫面預覽 (Screenshots)
- <img width="1344" height="6309" alt="Image" src="https://github.com/user-attachments/assets/21e0d4dc-56b5-42eb-a15b-42a34f5b2753" />
+![Coffee Daily 畫面預覽](https://github.com/user-attachments/assets/21e0d4dc-56b5-42eb-a15b-42a34f5b2753" /) 
+
 ## 👨‍💻 關於作者 (About Me)
 
 **Terrence (HUNG HSIANG JEN)**
-身為一名國際企業學系的學生與專案管理實習生 (PM Intern)，我喜歡將商業邏輯與使用者體驗 (UI/UX) 思維帶入日常生活中。除了研究咖啡豆的產區與沖煮參數，我也熱衷於火舞表演與發掘能提升生產力的數位工具。
+身為一名國際企業學系的學生與專案管理實習生 (PM Intern)，我喜歡將商業邏輯與使用者體驗 (UI/UX) 思維帶入日常生活中。
 
 歡迎與我交流咖啡沖煮的心得，或是探討產品設計的想法！
