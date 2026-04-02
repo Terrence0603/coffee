@@ -132,7 +132,10 @@
 
         <hr style="border:0; border-top:1px dashed var(--border-color); margin: 25px 0;">
 
-        <span class="section-label" style="border:none; margin-bottom:12px;">📝 詳細筆記 / Tasting Notes</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span class="section-label" style="border:none; margin-bottom:0;">📝 詳細筆記 / Tasting Notes</span>
+            <button id="micBtn" type="button" onclick="toggleMic()" style="background: #F4ECE4; border: 1px solid var(--border-color); border-radius: 20px; padding: 4px 12px; cursor: pointer; font-size: 0.9rem; color: var(--accent-wood); font-weight: bold; transition: 0.3s; font-family: 'Noto Serif TC', serif;">🎤 語音輸入</button>
+        </div>
         <textarea id="notes" placeholder="寫下風味描述、口感或改進想法..." style="height: 100px;"></textarea>
     </div>
 
@@ -511,7 +514,6 @@
             dose: document.getElementById('dose').value, water: document.getElementById('water').value,
             grind: document.getElementById('grind').value, pouring_stages_text: pouringStagesText, 
             notes: document.getElementById('notes').value, 
-            // 🌟 核心修改：將陣列轉為以逗號分隔的字串傳出
             expected_flavors: selectedExpected.size > 0 ? Array.from(selectedExpected).join(',') : "無標記",
             surprise_flavors: selectedSurprise.size > 0 ? Array.from(selectedSurprise).join(',') : "無標記",
             fragrance: scores[0], aroma: scores[1], flavor: scores[2], aftertaste: scores[3],
@@ -524,6 +526,61 @@
             await fetch(WEBHOOK_URL, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
             alert("✅ 紀錄儲存成功！"); window.location.reload(); 
         } catch(e) { alert("❌ 儲存失敗"); btn.disabled = false; btn.innerText = "記錄這杯咖啡"; }
+    }
+
+    // ==========================================
+    // 🎤 語音輸入功能 (Web Speech API)
+    // ==========================================
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-TW'; // 設定語言為繁體中文
+        recognition.continuous = false; // 講完一句話自動停止
+        recognition.interimResults = false;
+
+        // 當語音辨識成功並回傳文字時
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            const notesArea = document.getElementById('notes');
+            // 將辨識出的文字接在原本的筆記後面 (如果原本有字，就加一個空格)
+            notesArea.value += (notesArea.value ? ' ' : '') + transcript;
+        };
+
+        // 當語音辨識結束或發生錯誤時，把按鈕狀態恢復
+        recognition.onend = resetMicButton;
+        recognition.onerror = function(event) {
+            console.error("語音辨識錯誤:", event.error);
+            if(event.error !== 'no-speech') { alert("語音辨識發生錯誤：" + event.error); }
+            resetMicButton();
+        };
+    }
+
+    function toggleMic() {
+        if (!recognition) {
+            alert("抱歉，您的瀏覽器不支援語音輸入功能（建議使用 Chrome 或 Safari）。");
+            return;
+        }
+        const micBtn = document.getElementById('micBtn');
+        if (micBtn.innerText.includes('語音輸入')) {
+            try {
+                recognition.start();
+                micBtn.innerText = '🔴 聆聽中...';
+                micBtn.style.color = '#E07A5F'; // 變成紅色提示正在錄音
+                micBtn.style.borderColor = '#E07A5F';
+            } catch(e) { console.log("麥克風已啟動"); }
+        } else {
+            recognition.stop();
+            resetMicButton();
+        }
+    }
+
+    function resetMicButton() {
+        const micBtn = document.getElementById('micBtn');
+        micBtn.innerText = '🎤 語音輸入';
+        micBtn.style.color = 'var(--accent-wood)';
+        micBtn.style.borderColor = 'var(--border-color)';
     }
 </script>
 </body>
