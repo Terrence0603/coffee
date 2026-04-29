@@ -126,8 +126,9 @@ class ChartManager {
 
     static getChartImagesBase64() {
         return {
-            radar: this.radarChartInstance ? this.radarChartInstance.toBase64Image().split(',')[1] : null,
-            mixed: this.mixedChartInstance ? this.mixedChartInstance.toBase64Image().split(',')[1] : null
+            radar: this.radarChartInstance ? this.radarChartInstance.toBase64Image() : null,
+            mixed: this.mixedChartInstance ? this.mixedChartInstance.toBase64Image() : null
         };
+    }
     }
 }
