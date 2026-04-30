@@ -57,7 +57,47 @@ const AppController = {
         if (selectElement.value === "other") { customInput.style.display = "block"; } 
         else { customInput.style.display = "none"; customInput.value = ""; }
     },
+    toggleRatioLock() {
+        AppState.isRatioLocked = !AppState.isRatioLocked;
+        const btn = document.getElementById('ratioLockBtn');
+        if (AppState.isRatioLocked) {
+            btn.innerText = '🔒 鎖定';
+            btn.style.background = 'var(--accent-wood)';
+            btn.style.color = '#FFF';
+            this.updateRatioDisplay(); 
+        } else {
+            btn.innerText = '🔓 解鎖';
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--text-muted)';
+        }
+    },
 
+    updateRatioDisplay() {
+        const dose = parseFloat(document.getElementById('dose').value) || 0;
+        const water = parseFloat(document.getElementById('water').value) || 0;
+        if (dose > 0) {
+            AppState.currentRatio = (water / dose).toFixed(1);
+            document.getElementById('ratioDisplay').innerText = AppState.currentRatio;
+        }
+    },
+
+    handleRatioChange(source) {
+        const doseInput = document.getElementById('dose');
+        const waterInput = document.getElementById('water');
+        let dose = parseFloat(doseInput.value) || 0;
+        let water = parseFloat(waterInput.value) || 0;
+
+        if (AppState.isRatioLocked) {
+            if (source === 'dose' && dose > 0) {
+                waterInput.value = Math.round(dose * AppState.currentRatio);
+            } else if (source === 'water' && AppState.currentRatio > 0) {
+                doseInput.value = parseFloat((water / AppState.currentRatio).toFixed(1));
+            }
+        } else {
+            this.updateRatioDisplay();
+        }
+    },
+    
     handleBeanSelect() {
         const inputName = document.getElementById('beanName').value.trim();
         const matchedBean = AppState.globalBeanData.find(b => b.name && b.name.trim() === inputName);
