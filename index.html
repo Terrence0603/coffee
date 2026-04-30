@@ -37,13 +37,18 @@
         </div>
     </div>
 
-    <div class="card">
+     <div class="card">
         <span class="section-label">沖煮參數 / Brewing Parameters</span>
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: var(--text-muted); font-weight: bold; margin-right: 8px;">粉水比 1:<span id="ratioDisplay">15.0</span></span>
+            <button id="ratioLockBtn" onclick="AppController.toggleRatioLock()" style="background: transparent; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; padding: 2px 8px; color: var(--text-muted); font-family: 'Times New Roman', 'Noto Serif TC', serif;">🔓 解鎖</button>
+        </div>
         <div class="grid-2" style="margin-bottom: 10px;">
-            <input type="number" id="dose" placeholder="總粉重 / Dose (g)" value="20">
-            <input type="number" id="water" placeholder="總水量 / Water (ml)" value="300">
+            <input type="number" id="dose" placeholder="總粉重 / Dose (g)" value="20" oninput="AppController.handleRatioChange('dose')">
+            <input type="number" id="water" placeholder="總水量 / Water (ml)" value="300" oninput="AppController.handleRatioChange('water')">
         </div>
         <div class="grid-2">
+
             <div>
                 <select id="grinder" onchange="AppController.checkCustomInput('grinder')">
                     <option value="">載入磨豆機中... / Loading...</option>

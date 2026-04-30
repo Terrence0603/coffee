@@ -4,5 +4,7 @@ const AppState = {
     selectedExpected: new Set(),
     selectedSurprise: new Set(),
     stageCounter: 0,
-    radarChartScores: [5, 5, 5, 5, 5, 5, 5, 5] // 預設 8 個維度
+    radarChartScores: [5, 5, 5, 5, 5, 5, 5, 5], // 預設 8 個維度
+    isRatioLocked: false,
+    currentRatio: 15.0
 };
