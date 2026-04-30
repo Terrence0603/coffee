@@ -77,17 +77,30 @@ class ChartManager {
             },
             plugins: [this.customCanvasBackgroundColor],
             options: {
-                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, layout: { padding: { top: 60, left: 15, right: 15 } }, 
+                devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, layout: { padding: { top: 15, left: 15, right: 15 } }, 
                 scales: {
                     x: { type: 'linear', title: { display: true, text: '時間 / Time (秒 Seconds)', color: '#A1887F', font: {size: 11} }, grid: { color: '#EFEBE9' }, min: 0, offset: false, ticks: { stepSize: 10, color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
-                    yWater: { type: 'linear', position: 'left', title: { display: true, text: '累積水量 / Total Water (g)', color: '#A1887F', font: {size: 11} }, min: 0, beginAtZero: true, grid: { color: '#EFEBE9' }, ticks: { color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
+                    // 增加 grace: '15%'，避免水量線頂到天花板
+                    yWater: { type: 'linear', position: 'left', title: { display: true, text: '累積水量 / Total Water (g)', color: '#A1887F', font: {size: 11} }, min: 0, beginAtZero: true, grace: '15%', grid: { color: '#EFEBE9' }, ticks: { color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
+                    // 維持 max: 100 確保水溫的物理邏輯正確
                     yTemp: { type: 'linear', position: 'right', title: { display: true, text: '水溫 / Temp (°C)', color: '#E07A5F', font: {size: 11} }, min: 70, max: 100, grid: { drawOnChartArea: false }, ticks: { stepSize: 5, color: '#E07A5F', font: { family: "'Times New Roman', serif" } } }
                 },
                 plugins: { 
-                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 10 } },
+                    legend: { 
+                        display: true, 
+                        position: 'top', 
+                        // 增加 bottom padding 拉開與下方圖表的距離
+                        padding: { bottom: 25 },
+                        labels: { usePointStyle: true, boxWidth: 10, padding: 10 } 
+                    },
                     datalabels: {
                         display: (context) => context.datasetIndex === 0 && context.dataIndex % 4 === 1 && context.dataset.data[context.dataIndex] && context.dataset.data[context.dataIndex].y !== null,
-                        align: 'top', offset: 6, color: '#E07A5F', font: { weight: 'bold', size: 12, family: "'Times New Roman', serif" },
+                        // 智慧標籤反轉 (Smart Alignment) 機制
+                        align: (context) => {
+                            const val = context.dataset.data[context.dataIndex]?.y;
+                            return val >= 100 ? 'bottom' : 'top';
+                        },
+                        offset: 6, color: '#E07A5F', font: { weight: 'bold', size: 12, family: "'Times New Roman', serif" },
                         formatter: (value) => value && value.y ? value.y + '°' : ''
                     }
                 }
