@@ -77,6 +77,7 @@ class ChartManager {
             },
             plugins: [this.customCanvasBackgroundColor],
             options: {
+                // 將 top padding 縮減至 15，釋放上方空間
                 devicePixelRatio: 3, responsive: true, maintainAspectRatio: false, layout: { padding: { top: 15, left: 15, right: 15 } }, 
                 scales: {
                     x: { type: 'linear', title: { display: true, text: '時間 / Time (秒 Seconds)', color: '#A1887F', font: {size: 11} }, grid: { color: '#EFEBE9' }, min: 0, offset: false, ticks: { stepSize: 10, color: '#6F4E37', font: { family: "'Times New Roman', serif" } } },
